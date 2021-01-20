@@ -2,7 +2,7 @@ package com.pzx.pointcloud.datasource.las
 
 import java.io.Closeable
 import java.nio.ByteBuffer
-
+import org.apache.spark.sql.types._
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.expressions.{UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.execution.datasources.PartitionedFile
@@ -18,7 +18,13 @@ class LasFilePointReader(file: PartitionedFile, conf: Configuration) extends Ite
 
   lazy private val parser = LasFilePointParser(lasFileHeader.getPointDataFormatID)
 
-  lazy private[las] val pointSchema = parser.pointSchema
+  //parse返回的point schema中的XYZ是Int类型，需要转换为double
+  lazy private[las] val pointSchema : StructType = StructType(
+    parser.pointSchema.map(s =>{
+    if (s.name == PointFieldName.X || s.name == PointFieldName.Y || s.name == PointFieldName.Z)
+      StructField(s.name, DoubleType, s.nullable) else s
+    })
+  )
 
   //保证只读取点数据
   private val start = Math.max(file.start, lasFileHeader.getOffsetToPointData)

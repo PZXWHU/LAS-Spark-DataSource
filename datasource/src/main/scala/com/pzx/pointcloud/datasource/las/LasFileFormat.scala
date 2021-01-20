@@ -56,10 +56,7 @@ class LasFileFormat extends FileFormat with DataSourceRegister with Serializable
 
       //TODO  利用requiredSchema对数据进行裁剪，可将这步推到lasFilePointReader中去做
       val unsafeProjection =  schemaProjection(requiredSchema, lasFilePointReader.pointSchema)
-
       lasFilePointReader.map(unsafeProjection.apply)
-      lasFilePointReader
-
     }
   }
 

@@ -7,6 +7,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
@@ -28,11 +29,12 @@ public class Test {
 
 
         List<StructField> fields = new ArrayList<>();
+        fields.add(DataTypes.createStructField("intensity", DataTypes.ShortType, false));
+        fields.add(PointStructField.CLASSFICATION_Field());
         fields.add(PointStructField.X_Field());
         fields.add(PointStructField.Y_Field());
         fields.add(PointStructField.Z_Field());
-        fields.add(PointStructField.INTENSITY_Field());
-        fields.add(PointStructField.CLASSFICATION_Field());
+
         StructType scheme = DataTypes.createStructType(fields);
 
         Dataset<Row> dataset = sparkSession.read()
