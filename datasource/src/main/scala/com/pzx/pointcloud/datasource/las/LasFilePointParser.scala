@@ -4,7 +4,9 @@ import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.{GenerateUnsafeProjection, UnsafeRowWriter}
 import org.apache.spark.sql.types._
 import java.nio.{ByteBuffer, ByteOrder}
+
 import PointFieldName._
+import PointStructField._
 
 object PointFieldName{
   val X = "x"
@@ -30,6 +32,33 @@ object PointFieldName{
   val RNCSSE = "r_n_c_s_s_e"
   val SCAN_ANGLE = "scan_angle"
   val NIR = "nir"
+
+}
+
+object PointStructField{
+  lazy val X_Field = StructField(X, DoubleType, false)
+  lazy val Y_Field = StructField(Y, DoubleType, false)
+  lazy val Z_Field = StructField(Z, DoubleType, false)
+  lazy val INTENSITY_Field = StructField(INTENSITY, ShortType, false)
+  lazy val RNSE_Field = StructField(RNSE, ByteType, false)
+  lazy val CLASSFICATION_Field = StructField(CLASSFICATION, ByteType, false)
+  lazy val SCAN_ANGLE_RANK_LEFT_SIDE_Field = StructField(SCAN_ANGLE_RANK_LEFT_SIDE, ByteType, false)
+  lazy val USER_DATA_Field = StructField(USER_DATA, ByteType, false)
+  lazy val POINT_SOURCE_ID_Field = StructField(POINT_SOURCE_ID, ShortType, false)
+  lazy val GPS_TIME_Field = StructField(GPS_TIME, DoubleType, false)
+  lazy val R_Field = StructField(R, ShortType, false)
+  lazy val G_Field = StructField(G, ShortType, false)
+  lazy val B_Field = StructField(B, ShortType, false)
+  lazy val WAVE_PACKET_DESCRIPTOR_INDEX_Field = StructField(WAVE_PACKET_DESCRIPTOR_INDEX, ByteType, false)
+  lazy val BYTE_OFFSET_TO_WAVEFORM_DATA_Field = StructField(BYTE_OFFSET_TO_WAVEFORM_DATA, LongType, false)
+  lazy val WAVEFORM_PACKET_SIZE_IN_BYTES_Field= StructField(WAVEFORM_PACKET_SIZE_IN_BYTES, IntegerType, false)
+  lazy val RETURN_POINT_WAVEFORM_LOCATION_Field = StructField(RETURN_POINT_WAVEFORM_LOCATION, IntegerType, false)
+  lazy val PARAMETRIC_DX_Field = StructField(PARAMETRIC_DX, IntegerType, false)
+  lazy val PARAMETRIC_DY_Field = StructField(PARAMETRIC_DY, IntegerType, false)
+  lazy val PARAMETRIC_DZ_Field = StructField(PARAMETRIC_DZ, IntegerType, false)
+  lazy val RNCSSE_Field = StructField(RNCSSE, ShortType, false)
+  lazy val SCAN_ANGLE_Field = StructField(SCAN_ANGLE, ShortType, false)
+  lazy val NIR_Field = StructField(NIR, ShortType, false)
 
 }
 
@@ -103,12 +132,12 @@ class LasFilePointParser0 extends LasFilePointParser{
     StructField(X, IntegerType, false),
     StructField(Y, IntegerType, false),
     StructField(Z, IntegerType, false),
-    StructField(INTENSITY, ShortType, false),
-    StructField(RNSE, ByteType, false),
-    StructField(CLASSFICATION, ByteType, false),
-    StructField(SCAN_ANGLE_RANK_LEFT_SIDE, ByteType, false),
-    StructField(USER_DATA, ByteType, false),
-    StructField(POINT_SOURCE_ID, ShortType, false),
+    INTENSITY_Field,
+    RNSE_Field,
+    CLASSFICATION_Field,
+    SCAN_ANGLE_RANK_LEFT_SIDE_Field,
+    USER_DATA_Field,
+    POINT_SOURCE_ID_Field
   ))
 
 }
@@ -122,7 +151,7 @@ class LasFilePointParser1 extends LasFilePointParser0{
   override val fieldNum: Int = 10
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(GPS_TIME, DoubleType, false))
+    .add(GPS_TIME_Field)
 
 
 }
@@ -136,9 +165,9 @@ class LasFilePointParser2 extends LasFilePointParser0{
   override val fieldNum: Int = 12
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(R, ShortType, false))
-    .add(StructField(G, ShortType, false))
-    .add(StructField(B, ShortType, false))
+    .add(R_Field)
+    .add(G_Field)
+    .add(B_Field)
 
 }
 
@@ -151,9 +180,9 @@ class LasFilePointParser3 extends LasFilePointParser2{
   override val fieldNum: Int = 13
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(R, ShortType, false))
-    .add(StructField(G, ShortType, false))
-    .add(StructField(B, ShortType, false))
+    .add(R_Field)
+    .add(G_Field)
+    .add(B_Field)
 
 }
 
@@ -166,13 +195,13 @@ class LasFilePointParser4 extends LasFilePointParser1{
   override val fieldNum: Int = 17
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(WAVE_PACKET_DESCRIPTOR_INDEX, ByteType, false))
-    .add(StructField(BYTE_OFFSET_TO_WAVEFORM_DATA, LongType, false))
-    .add(StructField(WAVEFORM_PACKET_SIZE_IN_BYTES, IntegerType, false))
-    .add(StructField(RETURN_POINT_WAVEFORM_LOCATION, IntegerType, false))
-    .add(StructField(PARAMETRIC_DX, IntegerType, false))
-    .add(StructField(PARAMETRIC_DY, IntegerType, false))
-    .add(StructField(PARAMETRIC_DZ, IntegerType, false))
+    .add(WAVE_PACKET_DESCRIPTOR_INDEX_Field)
+    .add(BYTE_OFFSET_TO_WAVEFORM_DATA_Field)
+    .add(WAVEFORM_PACKET_SIZE_IN_BYTES_Field)
+    .add(RETURN_POINT_WAVEFORM_LOCATION_Field)
+    .add(PARAMETRIC_DX_Field)
+    .add(PARAMETRIC_DY_Field)
+    .add(PARAMETRIC_DZ_Field)
 
 }
 
@@ -185,13 +214,13 @@ class LasFilePointParser5 extends LasFilePointParser3{
   override val fieldNum: Int = 20
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(WAVE_PACKET_DESCRIPTOR_INDEX, ByteType, false))
-    .add(StructField(BYTE_OFFSET_TO_WAVEFORM_DATA, LongType, false))
-    .add(StructField(WAVEFORM_PACKET_SIZE_IN_BYTES, IntegerType, false))
-    .add(StructField(RETURN_POINT_WAVEFORM_LOCATION, IntegerType, false))
-    .add(StructField(PARAMETRIC_DX, IntegerType, false))
-    .add(StructField(PARAMETRIC_DY, IntegerType, false))
-    .add(StructField(PARAMETRIC_DZ, IntegerType, false))
+    .add(WAVE_PACKET_DESCRIPTOR_INDEX_Field)
+    .add(BYTE_OFFSET_TO_WAVEFORM_DATA_Field)
+    .add(WAVEFORM_PACKET_SIZE_IN_BYTES_Field)
+    .add(RETURN_POINT_WAVEFORM_LOCATION_Field)
+    .add(PARAMETRIC_DX_Field)
+    .add(PARAMETRIC_DY_Field)
+    .add(PARAMETRIC_DZ_Field)
 
 }
 
@@ -207,13 +236,13 @@ class LasFilePointParser6 extends LasFilePointParser{
     StructField(X, IntegerType, false),
     StructField(Y, IntegerType, false),
     StructField(Z, IntegerType, false),
-    StructField(INTENSITY, ShortType, false),
-    StructField(RNCSSE, ShortType, false),
-    StructField(CLASSFICATION, ByteType, false),
-    StructField(USER_DATA, ByteType, false),
-    StructField(SCAN_ANGLE, ShortType, false),
-    StructField(POINT_SOURCE_ID, ShortType, false),
-    StructField(GPS_TIME, LongType, false),
+    INTENSITY_Field,
+    RNCSSE_Field,
+    CLASSFICATION_Field,
+    USER_DATA_Field,
+    SCAN_ANGLE_Field,
+    POINT_SOURCE_ID_Field,
+    GPS_TIME_Field
   ))
 
 }
@@ -227,9 +256,9 @@ class LasFilePointParser7 extends LasFilePointParser6{
   override val fieldNum: Int = 13
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(R, ShortType, false))
-    .add(StructField(G, ShortType, false))
-    .add(StructField(B, ShortType, false))
+    .add(R_Field)
+    .add(G_Field)
+    .add(B_Field)
 
 }
 
@@ -242,7 +271,7 @@ class LasFilePointParser8 extends LasFilePointParser7{
   override val fieldNum: Int = 14
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(NIR, ShortType, false))
+    .add(NIR_Field)
 
 }
 
@@ -255,13 +284,13 @@ class LasFilePointParser9 extends LasFilePointParser6{
   override val fieldNum: Int = 17
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(WAVE_PACKET_DESCRIPTOR_INDEX, ByteType, false))
-    .add(StructField(BYTE_OFFSET_TO_WAVEFORM_DATA, LongType, false))
-    .add(StructField(WAVEFORM_PACKET_SIZE_IN_BYTES, IntegerType, false))
-    .add(StructField(RETURN_POINT_WAVEFORM_LOCATION, IntegerType, false))
-    .add(StructField(PARAMETRIC_DX, IntegerType, false))
-    .add(StructField(PARAMETRIC_DY, IntegerType, false))
-    .add(StructField(PARAMETRIC_DZ, IntegerType, false))
+    .add(WAVE_PACKET_DESCRIPTOR_INDEX_Field)
+    .add(BYTE_OFFSET_TO_WAVEFORM_DATA_Field)
+    .add(WAVEFORM_PACKET_SIZE_IN_BYTES_Field)
+    .add(RETURN_POINT_WAVEFORM_LOCATION_Field)
+    .add(PARAMETRIC_DX_Field)
+    .add(PARAMETRIC_DY_Field)
+    .add(PARAMETRIC_DZ_Field)
 
 }
 
@@ -274,10 +303,10 @@ class LasFilePointParser10 extends LasFilePointParser9{
   override val fieldNum: Int = 21
 
   override def pointSchema: StructType = super.pointSchema
-    .add(StructField(R, ShortType, false))
-    .add(StructField(G, ShortType, false))
-    .add(StructField(B, ShortType, false))
-    .add(StructField(NIR, ShortType, false))
+    .add(R_Field)
+    .add(G_Field)
+    .add(B_Field)
+    .add(NIR_Field)
 
 }
 
