@@ -1,40 +1,54 @@
 package com.pzx.pointcloud.datasource;
 
 import com.pzx.pointcloud.datasource.las.PointStructField;
-import com.pzx.pointcloud.datasource.las.strategy.LasAggregationExec;
 import com.pzx.pointcloud.datasource.las.strategy.LasAggregationStrategy;
+import com.pzx.pointcloud.datasource.utils.MySerializableConfiguration;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.apache.spark.sql.functions.*;
-import static org.apache.spark.sql.functions.col;
 
 public class Test {
 
+    public static void main2(String[] args)throws IOException {
+        Configuration configuration = new Configuration();
+        MySerializableConfiguration mySerializableConfiguration = new MySerializableConfiguration(configuration);
+
+    }
+
     public static void main(String[] args) {
+
+        SparkConf sparkConf = new SparkConf();
+        sparkConf.registerKryoClasses(new Class[]{Configuration.class});
+
         SparkSession sparkSession = SparkSession.builder()
                 .master("local[*]")
                 .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
+                .config(sparkConf)
                 .getOrCreate();
+
 
         LasAggregationStrategy.registerStrategy(sparkSession);
 
 
         List<StructField> fields = new ArrayList<>();
-        fields.add(DataTypes.createStructField("intensity", DataTypes.ShortType, false));
-        fields.add(PointStructField.CLASSFICATION_Field());
+        //fields.add(DataTypes.createStructField("intensity", DataTypes.ShortType, false));
+
         fields.add(PointStructField.X_Field());
         fields.add(PointStructField.Y_Field());
         fields.add(PointStructField.Z_Field());
-
+        fields.add(PointStructField.CLASSFICATION_Field());
+        fields.add(PointStructField.POINT_SOURCE_ID_Field());
         StructType scheme = DataTypes.createStructType(fields);
 
         Dataset<Row> dataset = sparkSession.read()

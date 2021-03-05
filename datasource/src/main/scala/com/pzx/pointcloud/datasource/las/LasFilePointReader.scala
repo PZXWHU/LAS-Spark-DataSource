@@ -70,4 +70,5 @@ class LasFilePointReader(file: PartitionedFile, conf: Configuration) extends Ite
 
   override def close(): Unit = lasFileReader.close()
 
+  override def toMap[T, U](implicit ev: UnsafeRow <:< (T, U)): Map[T, U] = super.toMap
 }

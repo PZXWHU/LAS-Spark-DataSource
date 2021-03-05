@@ -11,20 +11,24 @@ import java.io.Serializable;
 /**
  * copy from org.apache.spark.util.Configuration
  */
-public class SerializableConfiguration implements Serializable {
+public class MySerializableConfiguration implements Serializable {
 
     public transient Configuration configuration;
 
-    public SerializableConfiguration(Configuration configuration) {
+    public MySerializableConfiguration() { }
+
+    public MySerializableConfiguration(Configuration configuration) {
         this.configuration = configuration;
     }
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
+        private void writeObject(ObjectOutputStream out) throws IOException {
+        System.out.println("序列化");
         out.defaultWriteObject();
         configuration.write(out);
     }
 
     private void readObject(ObjectInputStream in) throws IOException{
+        System.out.println("反序列化");
         configuration = new Configuration(false);
         configuration.readFields(in);
     }
