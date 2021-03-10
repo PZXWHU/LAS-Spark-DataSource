@@ -2,21 +2,25 @@ package com.pzx.pointcloud.datasource.las
 
 import java.io.Closeable
 import java.nio.ByteBuffer
+
 import org.apache.spark.sql.types._
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.expressions.{UnsafeProjection, UnsafeRow}
 import org.apache.spark.sql.execution.datasources.PartitionedFile
 import PointFieldName._
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
 import org.apache.spark.sql.types.{DoubleType, IntegerType}
 
-class LasFilePointReader(file: PartitionedFile, conf: Configuration) extends Iterator[UnsafeRow] with Closeable with Serializable{
+class LasFilePointReader(file: PartitionedFile, conf: Configuration, requiredSchema: StructType)
+  extends Iterator[InternalRow] with Closeable with Serializable{
 
   lazy private val lasFileReader = new LasFileReader(new Path(file.filePath), conf)
 
   lazy private val lasFileHeader = lasFileReader.getLasFileHead
 
-  lazy private val parser = LasFilePointParser(lasFileHeader.getPointDataFormatID)
+  lazy private val parser = LasFilePointParser(lasFileHeader, requiredSchema)
 
   //parse返回的point schema中的XYZ是Int类型，需要转换为double
   lazy private[las] val pointSchema : StructType = StructType(
@@ -43,14 +47,14 @@ class LasFilePointReader(file: PartitionedFile, conf: Configuration) extends Ite
     pos <= end
   }
 
-  override def next(): UnsafeRow = {
+  override def next(): InternalRow = {
     lasFileReader.read(pointBuffer, pos)
     pos += lasFileHeader.getPointDataRecordLength
-    projectCoordinates(parser.parse(pointBuffer))
+    parser.parse(pointBuffer)
   }
 
-  //点坐标需要根据scale和offset进行转换
-  private def projectCoordinates(row: UnsafeRow) : UnsafeRow = {
+  /*点坐标需要根据scale和offset进行转换
+  private def projectCoordinates(row: InternalRow) : InternalRow = {
 
     for(field <- Seq(X, Y, Z)){
       val fieldIndex = pointSchema.fieldIndex(field)
@@ -67,8 +71,9 @@ class LasFilePointReader(file: PartitionedFile, conf: Configuration) extends Ite
     }
     row
   }
+   */
 
   override def close(): Unit = lasFileReader.close()
 
-  override def toMap[T, U](implicit ev: UnsafeRow <:< (T, U)): Map[T, U] = super.toMap
+  //override def toMap[T, U](implicit ev: UnsafeRow <:< (T, U)): Map[T, U] = super.toMap
 }

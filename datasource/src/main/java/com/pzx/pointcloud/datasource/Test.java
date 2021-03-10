@@ -28,11 +28,12 @@ public class Test {
 
     public static void main(String[] args) {
 
+
         SparkConf sparkConf = new SparkConf();
         sparkConf.registerKryoClasses(new Class[]{Configuration.class});
 
         SparkSession sparkSession = SparkSession.builder()
-                .master("local[*]")
+                .master("local[4]")
                 .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
                 .config(sparkConf)
                 .getOrCreate();
@@ -40,34 +41,67 @@ public class Test {
 
         LasAggregationStrategy.registerStrategy(sparkSession);
 
-
         List<StructField> fields = new ArrayList<>();
         //fields.add(DataTypes.createStructField("intensity", DataTypes.ShortType, false));
 
+
+        fields.add(PointStructField.Z_Field());
         fields.add(PointStructField.X_Field());
         fields.add(PointStructField.Y_Field());
-        fields.add(PointStructField.Z_Field());
-        fields.add(PointStructField.CLASSFICATION_Field());
-        fields.add(PointStructField.POINT_SOURCE_ID_Field());
+
         StructType scheme = DataTypes.createStructType(fields);
 
         Dataset<Row> dataset = sparkSession.read()
                 //.format("com.pzx.pointcloud.datasource.las.LasFileFormat")
                 .format("las")
                 .schema(scheme)
-                .load("D:\\wokspace\\点云数据集\\大数据集与工具\\data\\las\\elkrnefst.las");
-
-
-        dataset.show(10);
+                .load("D:\\wokspace\\点云数据集\\大数据集与工具\\data\\hn3\\las\\C_51DN2.las");
 
 
 
+        /*
+        List<StructField> fields = new ArrayList<>();
+        //fields.add(DataTypes.createStructField("intensity", DataTypes.ShortType, false));
+
+        fields.add(PointStructField.X_Field());
+        fields.add(PointStructField.Y_Field());
+        fields.add(PointStructField.Z_Field());
+        StructType scheme = DataTypes.createStructType(fields);
+
+        Dataset<Row> dataset = sparkSession.read()
+                //.format("com.pzx.pointcloud.datasource.las.LasFileFormat")
+                .schema(scheme)
+                .format("csv")
+                .option("sep"," ")
+                .load("D:\\wokspace\\点云数据集\\大数据集与工具\\data\\hn3\\C_51BZ1.txt");
+
+         */
+
+
+        dataset.foreachPartition(iter ->{
+            long t = System.currentTimeMillis();
+            int count = 0;
+            while (iter.hasNext()){
+                count++;
+                iter.next();
+            }
+            System.out.println(count + "  :  " +  (System.currentTimeMillis() - t));
+        });
+
+
+
+
+
+
+        dataset.show();
         Dataset<Row> dataset1 = dataset.select(min("x"),min("y"),min("z"),
                 max("x"),max("y"),max("z"), count("x"));
 
         dataset1.explain();//这一步和下一步的物理计划可能不同，因为下一步的action可能会影响物理计划
 
         dataset1.show();
+
+
         //System.out.println(dataset1.first());//这个时候就不会出现expresion上带着奇怪的Cast
 
 

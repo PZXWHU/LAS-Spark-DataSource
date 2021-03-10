@@ -1,12 +1,16 @@
 package com.pzx.pointcloud.datasource.las
 
-import org.apache.spark.sql.catalyst.expressions.UnsafeRow
+import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, UnsafeRow}
 import org.apache.spark.sql.catalyst.expressions.codegen.{GenerateUnsafeProjection, UnsafeRowWriter}
 import org.apache.spark.sql.types._
 import java.nio.{ByteBuffer, ByteOrder}
 
 import PointFieldName._
 import PointStructField._
+import org.apache.spark.sql.catalyst.InternalRow
+
+import scala.collection.mutable
+import scala.util.control._
 
 object PointFieldName{
   val X = "x"
@@ -65,8 +69,8 @@ object PointStructField{
 
 object LasFilePointParser{
 
-  def apply(pointFormatVersion : Int): LasFilePointParser = {
-    pointFormatVersion match {
+  def apply(lasFileHeader : LasFileHeader, requiredSchema: StructType): LasFilePointParser = {
+    val parser = lasFileHeader.getPointDataFormatID match {
       case 0 => new LasFilePointParser0
       case 1 => new LasFilePointParser1
       case 2 => new LasFilePointParser2
@@ -79,7 +83,16 @@ object LasFilePointParser{
       case 9 => new LasFilePointParser9
       case 10 => new LasFilePointParser10
     }
+    parser.requiredSchema = requiredSchema
+    parser.xScale = lasFileHeader.getxScale()
+    parser.yScale = lasFileHeader.getyScale()
+    parser.zScale = lasFileHeader.getzScale()
+    parser.xOffset = lasFileHeader.getxOffset()
+    parser.yOffset = lasFileHeader.getyOffset()
+    parser.zOffset = lasFileHeader.getzOffset()
+    parser
   }
+
 }
 
 abstract class LasFilePointParser extends Serializable{
@@ -92,30 +105,71 @@ abstract class LasFilePointParser extends Serializable{
 
   def pointSchema : StructType
 
-  lazy val unsafeRowWriter : UnsafeRowWriter = new UnsafeRowWriter(fieldNum)
+  var xScale = 1.0
 
-  //在unsafeRowWriter对应的位置写入对应类型的值
-  private def writeRowField(i : Int, byteBuffer: ByteBuffer, dataType: DataType) = (dataType) match {
-      case ByteType => unsafeRowWriter.write(i, byteBuffer.get())
-      case ShortType => unsafeRowWriter.write(i, byteBuffer.getShort())
-      case IntegerType => unsafeRowWriter.write(i, byteBuffer.getInt())
-      case LongType => unsafeRowWriter.write(i, byteBuffer.getLong())
-      case DoubleType => unsafeRowWriter.write(i, byteBuffer.getDouble())
+  var yScale = 1.0
+
+  var zScale = 1.0
+
+  var xOffset = 0.0
+
+  var yOffset = 0.0
+
+  var zOffset = 0.0
+
+  var requiredSchema: StructType = pointSchema
+
+  lazy val requiredSchemaNameMap : mutable.Map[String, Int] = {
+    val map = new mutable.HashMap[String, Int]
+    var index = 0
+    for(schema <- requiredSchema){
+      map.put(schema.name, index)
+      index += 1
+    }
+    map
   }
 
+  lazy val row = new GenericInternalRow(requiredSchema.length)
 
-  def parse(bytes : Array[Byte]) : UnsafeRow = {
+  private def readByteBuffer(byteBuffer: ByteBuffer, dataType: DataType): Any = (dataType) match {
+    case ByteType => byteBuffer.get()
+    case ShortType => byteBuffer.getShort()
+    case IntegerType => byteBuffer.getInt()
+    case LongType => byteBuffer.getLong()
+    case DoubleType =>  byteBuffer.getDouble()
+  }
+
+  def parse(bytes : Array[Byte]) : InternalRow = {
 
     val byteBuffer = ByteBuffer.wrap(bytes)
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN)//LAS文件中均是以LITTLE_ENDIAN方式存储
-    unsafeRowWriter.reset()//重置unsafeRowWriter
 
-    var i = 0
-    while (i < pointSchema.length){
-      writeRowField(i, byteBuffer, pointSchema(i).dataType)
-      i += 1
+    var fieldNum = 0
+    val loop = new Breaks
+    loop.breakable{
+      for(schema <- pointSchema){
+        val fieldIndex = requiredSchemaNameMap.get(schema.name)
+        if(fieldIndex.nonEmpty){
+          val fieldValue = readByteBuffer(byteBuffer, schema.dataType)
+          row(fieldIndex.get) = schema.name match {
+            case X => Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * xScale + xOffset
+            case Y =>  Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * yScale + yOffset
+            case Z => Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * zScale + zOffset
+            case _ => fieldValue
+          }
+          fieldNum += 1
+        }else
+          byteBuffer.position(byteBuffer.position() + schema.dataType.defaultSize)
+
+        if(fieldNum >= requiredSchema.length)
+          loop.break()
+      }
     }
-    unsafeRowWriter.getRow
+    row
+  }
+
+  def Integer2UnsignedInteger(fieldValue : Int) : Long = {
+    (fieldValue >>> 32 & 1L << 31 ) | ( fieldValue & Integer.MAX_VALUE.toLong )
   }
 
 }

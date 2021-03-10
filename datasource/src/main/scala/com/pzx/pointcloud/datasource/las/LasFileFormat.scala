@@ -49,11 +49,7 @@ class LasFileFormat extends FileFormat with DataSourceRegister with Serializable
 
     file: PartitionedFile => {
       val conf = stringToConfiguration(broadcastConf.value)
-
-      val lasFilePointReader = new LasFilePointReader(file, conf)
-      //TODO  利用requiredSchema对数据进行裁剪，可将这步推到lasFilePointReader中去做
-      val unsafeProjection =  schemaProjection(requiredSchema, lasFilePointReader.pointSchema)
-      lasFilePointReader.map(unsafeProjection.apply)
+      new LasFilePointReader(file, conf, requiredSchema)
     }
   }
 
@@ -69,7 +65,7 @@ class LasFileFormat extends FileFormat with DataSourceRegister with Serializable
     conf
   }
 
-  //根据输入和所需的schema，创建对应的UnsafeProjection
+  /*根据输入和所需的schema，创建对应的UnsafeProjection
   private def schemaProjection(requiredSchema : StructType, inputSchema : StructType) : UnsafeProjection = {
     //对于点数据的所有列信息，裁剪掉不需要的列，只留下requiredSchema包含的列，模仿ProjectExec的写法
     val inputAttributes = inputSchema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
@@ -77,6 +73,7 @@ class LasFileFormat extends FileFormat with DataSourceRegister with Serializable
     val requiredAttributes = requiredSchema.map(f => inputAttributes(inputSchema.fieldIndex(f.name)))
     UnsafeProjection.create(requiredAttributes, inputAttributes)
   }
+   */
 
 
 
