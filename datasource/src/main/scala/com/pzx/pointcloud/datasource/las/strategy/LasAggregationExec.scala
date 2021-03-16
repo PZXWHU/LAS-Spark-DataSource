@@ -43,11 +43,11 @@ case class LasAggregationExec(aggregateExpressions: Seq[NamedExpression],
   //将AggregateExpression替换为Literal
   def replaceAggregateExpression(experssion: Expression) = experssion transform {
     case AggregateExpression(Min(AttributeReference("x", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMinX).min)
-    case AggregateExpression(Max(AttributeReference("x", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxX).min)
+    case AggregateExpression(Max(AttributeReference("x", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxX).max)
     case AggregateExpression(Min(AttributeReference("y", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMinY).min)
-    case AggregateExpression(Max(AttributeReference("y", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxY).min)
+    case AggregateExpression(Max(AttributeReference("y", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxY).max)
     case AggregateExpression(Min(AttributeReference("z", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMinZ).min)
-    case AggregateExpression(Max(AttributeReference("z", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxZ).min)
+    case AggregateExpression(Max(AttributeReference("z", _, _, _)),_,_,_) => Literal(lasFileHeaders.map(_.getMaxZ).max)
     case AggregateExpression(Count(_),_,_,_) => Literal(lasFileHeaders.map(_.getNumberOfPointRecords).sum)
   }
 

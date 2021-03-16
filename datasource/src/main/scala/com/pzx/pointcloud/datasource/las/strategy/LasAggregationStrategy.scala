@@ -55,6 +55,7 @@ object LasAggregationStrategy extends SparkStrategy{
       case logicalRelation : LogicalRelation => logicalRelation
       case _ => null
     }
+    if(logicalRelation == null) return null
     //判断LogicalRelation中的baseRelation是否是HadoopFsRelation，且其中的fileFormat是否是LasFileFormat
     logicalRelation.relation match {
       case hadoopFsRelation: HadoopFsRelation =>
@@ -64,7 +65,7 @@ object LasAggregationStrategy extends SparkStrategy{
   }
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] =  plan match {
-
+    //groupingExpressions要为Nil
     case Aggregate(Nil, aggregateExpressions, logicalPlan)  =>{
       val hadoopFsRelation = extractHadoopFsRelation(logicalPlan)
       if (hadoopFsRelation != null && checkAggregateExpressions(aggregateExpressions)){

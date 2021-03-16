@@ -52,10 +52,10 @@ public class Test {
         StructType scheme = DataTypes.createStructType(fields);
 
         Dataset<Row> dataset = sparkSession.read()
-                //.format("com.pzx.pointcloud.datasource.las.LasFileFormat")
-                .format("las")
-                .schema(scheme)
-                .load("D:\\wokspace\\点云数据集\\大数据集与工具\\data\\hn3\\las\\C_51DN2.las");
+                .format("com.pzx.pointcloud.datasource.las.LasFileFormat")
+                //.format("las")
+                //.schema(scheme)
+                .load("D:\\wokspace\\点云数据集\\大数据集与工具\\data\\las\\elkrnefst.las");
 
 
 
@@ -77,7 +77,7 @@ public class Test {
 
          */
 
-
+        /*
         dataset.foreachPartition(iter ->{
             long t = System.currentTimeMillis();
             int count = 0;
@@ -88,10 +88,12 @@ public class Test {
             System.out.println(count + "  :  " +  (System.currentTimeMillis() - t));
         });
 
+         */
 
 
 
 
+        dataset.cache();//!!!!!!!!!!!!
 
         dataset.show();
         Dataset<Row> dataset1 = dataset.select(min("x"),min("y"),min("z"),
