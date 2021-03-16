@@ -64,6 +64,7 @@ dataset.show();
 +---------+----------+------------------+---------+--------------+
 */
 
+//注意：在调用下面语句之前，不能使用dataset.cache()，否则LasAggregationStrategy失效
 Dataset<Row> dataset1 = dataset.select(min("x"),min("y"),min("z"),
                 max("x"),max("y"),max("z"), count("x"));
 
