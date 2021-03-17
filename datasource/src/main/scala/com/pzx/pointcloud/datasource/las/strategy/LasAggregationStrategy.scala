@@ -3,7 +3,7 @@ package com.pzx.pointcloud.datasource.las.strategy
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, Project}
-import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
+import org.apache.spark.sql.execution.{FileSourceScanExec, SparkPlan, SparkStrategy, WholeStageCodegenExec}
 import org.apache.spark.sql.execution.datasources._
 import com.pzx.pointcloud.datasource.las.{LasFileFormat, LasFileReader}
 import org.apache.hadoop.conf.Configuration
@@ -22,6 +22,7 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.types.{ByteType, DataType, DecimalType, DoubleType, IntegerType, LongType, ShortType, StringType, StructType}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.execution.columnar.InMemoryRelation
 
 import scala.collection.mutable.ListBuffer
 
@@ -47,17 +48,23 @@ object LasAggregationStrategy extends SparkStrategy{
     true
   }
 
-  //检查LogicalPlan是否是LogicalRelation或者Project， LogicalRelation中的baseRelation是否是HadoopFsRelation且包含LasFileFormat
+  //检查LogicalPlan是否是LogicalRelation或者Project或者InMemoryRelation， LogicalRelation中的baseRelation是否是HadoopFsRelation且包含LasFileFormat
   private def extractHadoopFsRelation(logicalPlan: LogicalPlan): HadoopFsRelation ={
-    //获取LogicalRelation
-    val logicalRelation = logicalPlan match {
-      case Project(_, logicalRelation : LogicalRelation) => logicalRelation
-      case logicalRelation : LogicalRelation => logicalRelation
+    //获取BaseRelation
+    val BaseRelation = logicalPlan match {
+      case Project(_, logicalRelation : LogicalRelation) => logicalRelation.relation
+      case logicalRelation : LogicalRelation => logicalRelation.relation
+      case inMemoryRelation: InMemoryRelation => {
+        inMemoryRelation.cachedPlan match {
+          case WholeStageCodegenExec(fileSourceScanExec : FileSourceScanExec) => fileSourceScanExec.relation
+          case _ => null
+        }
+      }
       case _ => null
     }
-    if(logicalRelation == null) return null
-    //判断LogicalRelation中的baseRelation是否是HadoopFsRelation，且其中的fileFormat是否是LasFileFormat
-    logicalRelation.relation match {
+
+    //判断HadoopFsRelation其中的fileFormat是否是LasFileFormat
+    BaseRelation match {
       case hadoopFsRelation: HadoopFsRelation =>
         if (hadoopFsRelation.fileFormat.isInstanceOf[LasFileFormat]) hadoopFsRelation else null
       case _ => null
