@@ -55,9 +55,9 @@ public class LasFileHeader implements Serializable {
         else
             position += 20;//version <= 1.2 Number of points by return 20bytes
 
-        xScale = Math.abs(LittleEndianUtils.bytesToDouble(readBytes(8)));
-        yScale = Math.abs(LittleEndianUtils.bytesToDouble(readBytes(8)));
-        zScale = Math.abs(LittleEndianUtils.bytesToDouble(readBytes(8)));
+        xScale = LittleEndianUtils.bytesToDouble(readBytes(8));
+        yScale = LittleEndianUtils.bytesToDouble(readBytes(8));
+        zScale = LittleEndianUtils.bytesToDouble(readBytes(8));
 
         xOffset = LittleEndianUtils.bytesToDouble(readBytes(8));
         yOffset = LittleEndianUtils.bytesToDouble(readBytes(8));

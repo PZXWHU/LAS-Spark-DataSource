@@ -152,9 +152,9 @@ abstract class LasFilePointParser extends Serializable{
         if(fieldIndex.nonEmpty){
           val fieldValue = readByteBuffer(byteBuffer, schema.dataType)
           row(fieldIndex.get) = schema.name match {
-            case X => Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * xScale + xOffset
-            case Y =>  Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * yScale + yOffset
-            case Z => Integer2UnsignedInteger(fieldValue.asInstanceOf[Int]) * zScale + zOffset
+            case X => fieldValue.asInstanceOf[Int] * xScale + xOffset
+            case Y =>  fieldValue.asInstanceOf[Int] * yScale + yOffset
+            case Z => fieldValue.asInstanceOf[Int] * zScale + zOffset
             case _ => fieldValue
           }
           fieldNum += 1
@@ -166,10 +166,6 @@ abstract class LasFilePointParser extends Serializable{
       }
     }
     row
-  }
-
-  def Integer2UnsignedInteger(fieldValue : Int) : Long = {
-    (fieldValue >>> 32 & 1L << 31 ) | ( fieldValue & Integer.MAX_VALUE.toLong )
   }
 
 }
